@@ -5,6 +5,7 @@ import {
   syncUserDeletion,
   syncUserUpdation,
 } from "@/inngest/functions";
+// This is the API route that Inngest will call when events are triggered
 
 export const { GET, POST, PUT } = serve({
   client: inngest,

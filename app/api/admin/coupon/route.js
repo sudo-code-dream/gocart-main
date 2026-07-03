@@ -36,9 +36,9 @@ export async function POST(request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request) {
   try {
-    const { userId } = getAuth();
+    const { userId } = getAuth(request);
     const isAdmin = authAdmin(userId);
 
     if (!isAdmin) {

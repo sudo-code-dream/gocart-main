@@ -63,6 +63,16 @@ export async function POST(request) {
 
     const optimizedImage = `${process.env.IMAGEKIT_URL_ENDPOINT}/tr:q-auto,f-webp,w-512${response.filePath}`;
 
+    console.log("userId:", userId);
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    console.log("user:", user);
+
     const newStore = await prisma.store.create({
       data: {
         userId,
@@ -83,7 +93,7 @@ export async function POST(request) {
 
     return NextResponse.json({ message: "Applied, waiting for approval" });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return NextResponse.json({
       error: error.code || error.message,
       status: 400,

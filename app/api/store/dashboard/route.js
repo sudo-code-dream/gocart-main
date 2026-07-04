@@ -1,6 +1,7 @@
 // Seller Dashboard Getting Data and ETC for their store
 
 import prisma from "@/lib/prisma";
+import authSeller from "@/middlewares/authSeller";
 import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 

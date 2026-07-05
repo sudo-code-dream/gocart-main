@@ -1,3 +1,4 @@
+import { getPayMongoHeaders } from "@/lib/paymongo";
 import prisma from "@/lib/prisma";
 import { getAuth } from "@clerk/nextjs/server";
 import { PaymentMethod } from "@prisma/client";
@@ -120,12 +121,88 @@ export async function POST(request) {
       orderIds.push(order.id);
     }
 
+    if (paymentMethod === "QRPH") {
+      const paymentIntentResponse = await fetch(
+        "https://api.paymongo.com/v1/payment_intents",
+        {
+          method: "POST",
+          headers: getPayMongoHeaders(),
+          body: JSON.stringify({
+            data: {
+              attributes: {
+                amount: Math.round(fullAmount * 100),
+                currency: "PHP",
+                payment_method_allowed: ["qrph"],
+                description: `Order ${orderIds.join(",")}`,
+              },
+            },
+          }),
+        },
+      );
+
+      const paymentIntent = await paymentIntentResponse.json();
+
+      const paymentMethodResponse = await fetch(
+        "https://api.paymongo.com/v1/payment_methods",
+        {
+          method: "POST",
+          headers: getPayMongoHeaders(),
+          body: JSON.stringify({
+            data: {
+              attributes: {
+                type: "qrph",
+              },
+            },
+          }),
+        },
+      );
+
+      const paymentMethodData = await paymentMethodResponse.json();
+
+      const attachResponse = await fetch(
+        `https://api.paymongo.com/v1/payment_intents/${paymentIntent.data.id}/attach`,
+        {
+          method: "POST",
+          headers: getPayMongoHeaders(),
+          body: JSON.stringify({
+            data: {
+              attributes: {
+                payment_method: paymentMethodData.data.id,
+                client_key: paymentIntent.data.attributes.client_key,
+              },
+            },
+          }),
+        },
+      );
+
+      const attachedPayment = await attachResponse.json();
+
+      await prisma.order.updateMany({
+        where: {
+          id: {
+            in: orderIds,
+          },
+        },
+        data: {
+          paymongoReference: paymentIntent.data.id,
+        },
+      });
+
+      return NextResponse.json({
+        paymentType: "QRPH",
+        orderIds,
+        qrImage: attachedPayment.data.attributes.next_action.code.image_url,
+      });
+    }
+
     await prisma.user.update({
       where: { id: userId },
       data: { cart: {} },
     });
 
-    return NextResponse.json({ message: "Order Placed Successfully" });
+    return NextResponse.json({
+      message: "Order Placed Successfully",
+    });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -143,14 +220,25 @@ export async function GET(request) {
         userId,
         OR: [
           { paymentMethod: PaymentMethod.COD },
-          { AND: [{ paymentMethod: PaymentMethod.STRIPE }, { isPaid: true }] },
+          {
+            AND: [{ paymentMethod: PaymentMethod.STRIPE }, { isPaid: true }],
+          },
+          {
+            AND: [{ paymentMethod: PaymentMethod.QRPH }, { isPaid: true }],
+          },
         ],
       },
       include: {
-        orderItems: { include: { product: true } },
+        orderItems: {
+          include: {
+            product: true,
+          },
+        },
         address: true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
     return NextResponse.json({ orders });

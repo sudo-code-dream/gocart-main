@@ -7,6 +7,34 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 export default function StoreOrders() {
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "PAYMENT_PENDING":
+        return "bg-yellow-100 text-yellow-700";
+
+      case "ORDER_PLACED":
+        return "bg-blue-100 text-blue-700";
+
+      case "PROCESSING":
+        return "bg-purple-100 text-purple-700";
+
+      case "SHIPPED":
+        return "bg-indigo-100 text-indigo-700";
+
+      case "DELIVERED":
+        return "bg-green-100 text-green-700";
+
+      case "CANCELLED":
+        return "bg-red-100 text-red-700";
+
+      case "PAYMENT_EXPIRED":
+        return "bg-gray-100 text-gray-700";
+
+      default:
+        return "bg-slate-100 text-slate-700";
+    }
+  };
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -126,11 +154,14 @@ export default function StoreOrders() {
                       onChange={(e) =>
                         updateOrderStatus(order.id, e.target.value)
                       }
-                      className='border-gray-300 rounded-md text-sm focus:ring focus:ring-blue-200'>
+                      className={`rounded-md text-sm border-0 font-medium px-2 py-1 ${getStatusColor(order.status)}`}>
+                      <option value='PAYMENT_PENDING'>PAYMENT_PENDING</option>
                       <option value='ORDER_PLACED'>ORDER_PLACED</option>
                       <option value='PROCESSING'>PROCESSING</option>
                       <option value='SHIPPED'>SHIPPED</option>
                       <option value='DELIVERED'>DELIVERED</option>
+                      <option value='CANCELLED'>CANCELLED</option>
+                      <option value='PAYMENT_EXPIRED'>PAYMENT_EXPIRED</option>
                     </select>
                   </td>
                   <td className='px-4 py-3 text-gray-500'>

@@ -1,5 +1,5 @@
 import { PlusIcon, SquarePenIcon, XIcon } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AddressModal from "./AddressModal";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
@@ -23,6 +23,9 @@ const OrderSummary = ({ totalPrice, items }) => {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [couponCodeInput, setCouponCodeInput] = useState("");
   const [coupon, setCoupon] = useState("");
+  const [qrImage, setQrImage] = useState(null);
+  const [orderId, setOrderId] = useState(null);
+  const [checkingPayment, setCheckingPayment] = useState(false);
 
   const handleCouponCode = async (event) => {
     event.preventDefault();
@@ -70,6 +73,15 @@ const OrderSummary = ({ totalPrice, items }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      if (data.paymentType === "QRPH") {
+        setQrImage(data.qrImage);
+
+        // save first order id for payment checking
+        localStorage.setItem("pendingOrderId", data.orderIds[0]);
+
+        return;
+      }
+
       if (paymentMethod === "STRIPE") {
         window.location.href = data.session.url;
       } else {
@@ -81,6 +93,38 @@ const OrderSummary = ({ totalPrice, items }) => {
       toast.error(error?.response?.data?.error || error?.message);
     }
   };
+
+  useEffect(() => {
+    const orderId = localStorage.getItem("pendingOrderId");
+
+    if (!orderId || !qrImage) return;
+
+    setCheckingPayment(true);
+
+    const interval = setInterval(async () => {
+      try {
+        const { data } = await axios.get(
+          `/api/paymongo/check?orderId=${orderId}`,
+        );
+
+        if (data.isPaid) {
+          clearInterval(interval);
+
+          localStorage.removeItem("pendingOrderId");
+
+          toast.success("Payment Successful!");
+
+          dispatch(fetchCart({ getToken }));
+
+          router.push("/orders");
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [qrImage]);
 
   return (
     <div className='w-full max-w-lg lg:max-w-[340px] bg-slate-50/30 border border-slate-200 text-slate-500 text-sm rounded-xl p-7'>
@@ -110,6 +154,16 @@ const OrderSummary = ({ totalPrice, items }) => {
         <label htmlFor='STRIPE' className='cursor-pointer'>
           Stripe Payment
         </label>
+        <div className='flex gap-2 items-center mt-1'>
+          <input
+            type='radio'
+            id='QRPH'
+            name='payment'
+            onChange={() => setPaymentMethod("QRPH")}
+            checked={paymentMethod === "QRPH"}
+          />
+          <label htmlFor='QRPH'>QRPH (GCash / Maya)</label>
+        </div>
       </div>
       <div className='my-4 py-4 border-y border-slate-200 text-slate-400'>
         <p>Address</p>
@@ -237,6 +291,18 @@ const OrderSummary = ({ totalPrice, items }) => {
         className='w-full bg-slate-700 text-white py-2.5 rounded hover:bg-slate-900 active:scale-95 transition-all'>
         Place Order
       </button>
+
+      {qrImage && (
+        <div className='mt-4 text-center'>
+          <h3 className='font-semibold mb-2'>Scan to Pay</h3>
+
+          <img src={qrImage} alt='QRPH Payment' className='mx-auto max-w-xs' />
+
+          <p className='mt-2 text-sm text-slate-500'>
+            Complete payment using GCash or Maya
+          </p>
+        </div>
+      )}
 
       {showAddressModal && (
         <AddressModal setShowAddressModal={setShowAddressModal} />

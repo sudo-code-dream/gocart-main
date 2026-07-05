@@ -45,22 +45,26 @@ model Product {
 }
 
 enum OrderStatus {
+    PAYMENT_PENDING
     ORDER_PLACED
     PROCESSING
     SHIPPED
     DELIVERED
+    CANCELLED
+    PAYMENT_EXPIRED
 }
 
 enum PaymentMethod {
     COD
     STRIPE
+    QRPH
 }
 
 // Required for creating an Order: total, userId, storeId, addressId, isPaid, paymentMethod, isCouponUsed, coupon (JSON), orderItems (nested)
 model Order {
     id            String        @id @default(cuid())
     total         Float
-    status        OrderStatus   @default(ORDER_PLACED)
+    status OrderStatus @default(PAYMENT_PENDING)
     userId        String
     storeId       String
     addressId     String
@@ -71,6 +75,8 @@ model Order {
     isCouponUsed  Boolean       @default(false)
     coupon        Json          @default("{}")
     orderItems    OrderItem[]
+    paymongoReference  String?
+    paymongoPaymentIntentId String? @unique
 
     // Relations
     user    User    @relation("BuyerRelation", fields: [userId], references: [id])

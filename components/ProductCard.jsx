@@ -1,97 +1,120 @@
 "use client";
 
-import { Heart, StarIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { addToCart } from "@/lib/features/cart/cartSlice";
+import { Heart, Star } from "lucide-react";
+
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
 
 const ProductCard = ({ product }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$";
+  const productId = product.id;
+
+  const dispatch = useDispatch();
+  const router = useRouter();
+
+  const cart = useSelector((state) => state.cart.cartItems);
+
+  const addToCartHandler = () => {
+    dispatch(addToCart({ productId }));
+  };
 
   const rating =
     product.rating.length > 0
-      ? Math.round(
+      ? (
           product.rating.reduce((acc, curr) => acc + curr.rating, 0) /
-            product.rating.length,
-        )
+          product.rating.length
+        ).toFixed(1)
       : 0;
 
   return (
     <Link
       href={`/product/${product.id}`}
-      className='group block overflow-hidden rounded-3xl bg-white border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-2xl'>
+      className='group overflow-hidden rounded-xl border bg-card transition hover:shadow-xl'>
       {/* Image */}
-      <div className='relative overflow-hidden'>
+
+      <div className='bg-muted relative aspect-square overflow-hidden'>
         <Image
           src={product.images[0]}
           alt={product.name}
-          width={500}
-          height={500}
-          className='h-56 w-full object-cover transition duration-500 group-hover:scale-110'
+          fill
+          className='object-cover transition-transform duration-300 group-hover:scale-105'
         />
 
-        {/* Favorite Button */}
-        <button
-          type='button'
+        <Button
+          size='icon'
+          variant='ghost'
           onClick={(e) => e.preventDefault()}
-          className='absolute right-3 top-3 rounded-full bg-white/90 p-2 shadow-md backdrop-blur transition hover:scale-110'>
-          <Heart size={18} className='text-gray-600' />
-        </button>
-
-        {/* Sample Badge */}
-        <span className='absolute left-3 top-3 rounded-full bg-blue-500 px-3 py-1 text-xs font-semibold text-white shadow'>
-          🔥 Popular
-        </span>
+          className='bg-background/80 absolute top-2 right-2 h-8 w-8 rounded-full backdrop-blur'>
+          <Heart className='h-4 w-4' />
+        </Button>
       </div>
 
       {/* Content */}
-      <div className='space-y-3 p-5'>
-        {/* Rating */}
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-1'>
-            {Array(5)
-              .fill("")
-              .map((_, index) => (
-                <StarIcon
-                  key={index}
-                  size={15}
-                  className='text-transparent'
-                  fill={rating >= index + 1 ? "#FBBF24" : "#E5E7EB"}
-                />
-              ))}
+
+      <div className='p-4'>
+        <div className='flex items-center justify-between gap-4'>
+          <div className='min-w-0'>
+            <h3 className='truncate font-semibold'>{product.name}</h3>
+
+            <div className='mt-1 flex items-center gap-1'>
+              <Star className='fill-yellow-400 text-yellow-400 h-3.5 w-3.5' />
+
+              <span className='text-sm'>{rating}</span>
+
+              <span className='text-muted-foreground text-sm'>
+                ({product.rating.length})
+              </span>
+            </div>
           </div>
 
-          <span className='text-xs text-gray-500'>
-            ({product.rating.length})
-          </span>
-        </div>
-
-        {/* Product Name */}
-        <h3 className='line-clamp-2 text-lg font-bold text-gray-900 group-hover:text-orange-600 transition'>
-          {product.name}
-        </h3>
-
-        {/* Placeholder Description */}
-        <p className='line-clamp-2 text-sm text-gray-500'>
-          Freshly prepared and made with quality ingredients.
-        </p>
-
-        {/* Bottom */}
-        <div className='flex items-center justify-between border-t pt-4'>
-          <div>
-            <p className='text-xs text-gray-400'>Starting from</p>
-            <p className='text-2xl font-bold text-shad  ow-blue-500 text-blue-500'>
+          <div className='text-right'>
+            <div className='font-semibold'>
               {currency}
               {product.price}
-            </p>
-          </div>
+            </div>
 
-          <button
-            type='button'
-            onClick={(e) => e.preventDefault()}
-            className='rounded-xl bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 hover:shadow-lg'>
-            Add
-          </button>
+            <div className='text-muted-foreground text-sm line-through'>
+              {currency}
+              {product.mrp}
+            </div>
+          </div>
+        </div>
+
+        <div className='mt-4 grid grid-cols-2 gap-2'>
+          <Button
+            size='sm'
+            className='w-full'
+            onClick={(e) => {
+              e.preventDefault();
+
+              if (!cart[productId]) {
+                addToCartHandler();
+              }
+
+              router.push("/checkout");
+            }}>
+            Buy Now
+          </Button>
+
+          <Button
+            size='sm'
+            variant={cart[productId] ? "default" : "outline"}
+            className='w-full'
+            onClick={(e) => {
+              e.preventDefault();
+
+              if (!cart[productId]) {
+                addToCartHandler();
+              } else {
+                router.push("/cart");
+              }
+            }}>
+            {!cart[productId] ? "Add to Cart" : "View Cart"}
+          </Button>
         </div>
       </div>
     </Link>

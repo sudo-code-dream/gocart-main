@@ -10,6 +10,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { useUser, useClerk, UserButton, Show } from "@clerk/nextjs";
+import Image from "next/image";
+import logo from "@/assets/top.png";
 
 const Navbar = () => {
   const { user } = useUser();
@@ -28,16 +30,16 @@ const Navbar = () => {
     <nav className='relative bg-white'>
       <div className='mx-6'>
         <div className='flex items-center justify-between max-w-7xl mx-auto py-4  transition-all'>
-          <Link
-            href='/'
-            className='relative text-4xl font-semibold text-slate-700'>
-            <span className='text-green-600'>go</span>cart
-            <span className='text-green-600 text-5xl leading-0'>.</span>
-            <Show when={{ plan: "plus" }}>
-              <p className='absolute text-xs font-semibold -top-1 -right-8 px-3 p-0.5 rounded-full flex items-center gap-2 text-white bg-green-500'>
-                plus
-              </p>
-            </Show>
+          <Link href='/' className='flex flex-col leading-none'>
+            <h1 className='text-3xl font-black tracking-tight'>
+              <span className='text-[#0B5ED7]'>Grab</span>
+              <span className='text-sky-400'>N</span>
+              <span className='text-[#0B5ED7]'>Go</span>
+            </h1>
+
+            <span className='text-[10px] tracking-[0.35em] uppercase text-slate-500'>
+              CANTEEN • MADE EASY
+            </span>
           </Link>
 
           {/* Desktop Menu */}
@@ -93,15 +95,6 @@ const Navbar = () => {
           <div className='sm:hidden'>
             {user ? (
               <div>
-                <UserButton>
-                  <UserButton.MenuItems>
-                    <UserButton.Action
-                      labelIcon={<ShoppingCartIcon size={16} />}
-                      label='Card'
-                      onClick={() => router.push("/card")}
-                    />
-                  </UserButton.MenuItems>
-                </UserButton>
                 <UserButton>
                   <UserButton.MenuItems>
                     <UserButton.Action

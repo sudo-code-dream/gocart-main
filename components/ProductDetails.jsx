@@ -1,84 +1,170 @@
-'use client'
+"use client";
 
 import { addToCart } from "@/lib/features/cart/cartSlice";
-import { StarIcon, TagIcon, EarthIcon, CreditCardIcon, UserIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Counter from "./Counter";
+
+import { Star, Truck, ShieldCheck, Heart } from "lucide-react";
+
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import Image from "next/image";
-import Counter from "./Counter";
 import { useDispatch, useSelector } from "react-redux";
 
 const ProductDetails = ({ product }) => {
+  const productId = product.id;
+  const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$";
 
-    const productId = product.id;
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$';
+  const dispatch = useDispatch();
+  const router = useRouter();
 
-    const cart = useSelector(state => state.cart.cartItems);
-    const dispatch = useDispatch();
+  const cart = useSelector((state) => state.cart.cartItems);
 
-    const router = useRouter()
+  const [mainImage, setMainImage] = useState(product.images[0]);
 
-    const [mainImage, setMainImage] = useState(product.images[0]);
+  const addToCartHandler = () => {
+    dispatch(addToCart({ productId }));
+  };
 
-    const addToCartHandler = () => {
-        dispatch(addToCart({ productId }))
-    }
+  const averageRating =
+    product.rating.length > 0
+      ? product.rating.reduce((acc, item) => acc + item.rating, 0) /
+        product.rating.length
+      : 0;
 
-    const averageRating = product.rating.reduce((acc, item) => acc + item.rating, 0) / product.rating.length;
-    
-    return (
-        <div className="flex max-lg:flex-col gap-12">
-            <div className="flex max-sm:flex-col-reverse gap-3">
-                <div className="flex sm:flex-col gap-3">
-                    {product.images.map((image, index) => (
-                        <div key={index} onClick={() => setMainImage(product.images[index])} className="bg-slate-100 flex items-center justify-center size-26 rounded-lg group cursor-pointer">
-                            <Image src={image} className="group-hover:scale-103 group-active:scale-95 transition" alt="" width={45} height={45} />
-                        </div>
-                    ))}
-                </div>
-                <div className="flex justify-center items-center h-100 sm:size-113 bg-slate-100 rounded-lg ">
-                    <Image src={mainImage} alt="" width={250} height={250} />
-                </div>
-            </div>
-            <div className="flex-1">
-                <h1 className="text-3xl font-semibold text-slate-800">{product.name}</h1>
-                <div className='flex items-center mt-2'>
-                    {Array(5).fill('').map((_, index) => (
-                        <StarIcon key={index} size={14} className='text-transparent mt-0.5' fill={averageRating >= index + 1 ? "#00C950" : "#D1D5DB"} />
-                    ))}
-                    <p className="text-sm ml-3 text-slate-500">{product.rating.length} Reviews</p>
-                </div>
-                <div className="flex items-start my-6 gap-3 text-2xl font-semibold text-slate-800">
-                    <p> {currency}{product.price} </p>
-                    <p className="text-xl text-slate-500 line-through">{currency}{product.mrp}</p>
-                </div>
-                <div className="flex items-center gap-2 text-slate-500">
-                    <TagIcon size={14} />
-                    <p>Save {((product.mrp - product.price) / product.mrp * 100).toFixed(0)}% right now</p>
-                </div>
-                <div className="flex items-end gap-5 mt-10">
-                    {
-                        cart[productId] && (
-                            <div className="flex flex-col gap-3">
-                                <p className="text-lg text-slate-800 font-semibold">Quantity</p>
-                                <Counter productId={productId} />
-                            </div>
-                        )
-                    }
-                    <button onClick={() => !cart[productId] ? addToCartHandler() : router.push('/cart')} className="bg-slate-800 text-white px-10 py-3 text-sm font-medium rounded hover:bg-slate-900 active:scale-95 transition">
-                        {!cart[productId] ? 'Add to Cart' : 'View Cart'}
-                    </button>
-                </div>
-                <hr className="border-gray-300 my-5" />
-                <div className="flex flex-col gap-4 text-slate-500">
-                    <p className="flex gap-3"> <EarthIcon className="text-slate-400" /> Free shipping worldwide </p>
-                    <p className="flex gap-3"> <CreditCardIcon className="text-slate-400" /> 100% Secured Payment </p>
-                    <p className="flex gap-3"> <UserIcon className="text-slate-400" /> Trusted by top brands </p>
-                </div>
+  const discount = (
+    ((product.mrp - product.price) / product.mrp) *
+    100
+  ).toFixed(0);
 
-            </div>
+  return (
+    <div className='mx-auto w-full max-w-7xl'>
+      <div className='grid grid-cols-1 gap-10 md:grid-cols-2'>
+        {/* Images */}
+        <div className='mx-auto w-full max-w-md'>
+          <div className='bg-muted relative aspect-square overflow-hidden rounded-xl'>
+            <Image
+              src={mainImage}
+              alt={product.name}
+              fill
+              className='object-contain p-6'
+            />
+
+            <Button
+              size='icon'
+              variant='outline'
+              className='absolute right-4 top-4 rounded-full bg-white/80 backdrop-blur'>
+              <Heart className='h-5 w-5' />
+            </Button>
+          </div>
+
+          <div className='mt-4 flex gap-3'>
+            {product.images.map((image, index) => (
+              <button
+                key={index}
+                onClick={() => setMainImage(image)}
+                className={`overflow-hidden rounded-lg border transition ${
+                  mainImage === image ? "border-primary" : "border-transparent"
+                }`}>
+                <Image
+                  src={image}
+                  alt=''
+                  width={80}
+                  height={80}
+                  className='object-contain p-2'
+                />
+              </button>
+            ))}
+          </div>
         </div>
-    )
-}
 
-export default ProductDetails
+        {/* Product Info */}
+
+        <div className='flex flex-col'>
+          <div className='mb-4 flex items-center gap-4'>
+            <span className='bg-primary/10 text-primary rounded-full px-3 py-1 text-sm font-medium'>
+              {product.category}
+            </span>
+
+            <div className='flex items-center gap-1'>
+              <Star className='h-4 w-4 fill-yellow-400 text-yellow-400' />
+
+              <span className='text-sm font-medium'>
+                {averageRating.toFixed(1)}
+              </span>
+
+              <span className='text-muted-foreground text-sm'>
+                ({product.rating.length} reviews)
+              </span>
+            </div>
+          </div>
+
+          <h1 className='mb-3 text-3xl font-bold'>{product.name}</h1>
+
+          <div className='mb-6 flex items-center gap-4'>
+            <span className='text-3xl font-bold'>
+              {currency}
+              {product.price}
+            </span>
+
+            <span className='text-muted-foreground line-through'>
+              {currency}
+              {product.mrp}
+            </span>
+
+            <span className='text-green-600 font-medium'>Save {discount}%</span>
+          </div>
+
+          <p className='text-muted-foreground mb-8'>{product.description}</p>
+
+          <div className='mb-8 grid grid-cols-2 gap-4'>
+            <div className='flex items-center gap-2 text-sm'>
+              <div className='h-2 w-2 rounded-full bg-green-500'></div>
+              <span>Available</span>
+            </div>
+
+            <div className='flex items-center gap-2 text-sm'>
+              <ShieldCheck className='h-4 w-4' />
+              <span>Secure Payment</span>
+            </div>
+          </div>
+
+          {cart[productId] && (
+            <div className='mb-6'>
+              <p className='mb-3 font-medium'>Quantity</p>
+
+              <Counter productId={productId} />
+            </div>
+          )}
+
+          <div className='flex gap-4'>
+            <Button
+              size='lg'
+              className='flex-1'
+              onClick={() =>
+                !cart[productId] ? addToCartHandler() : router.push("/cart")
+              }>
+              {!cart[productId] ? "Add to Cart" : "View Cart"}
+            </Button>
+
+            <Button
+              variant='outline'
+              size='lg'
+              className='flex-1'
+              onClick={() => {
+                if (!cart[productId]) {
+                  addToCartHandler();
+                }
+
+                router.push("/checkout");
+              }}>
+              Buy Now
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProductDetails;
